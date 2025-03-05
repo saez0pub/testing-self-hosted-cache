@@ -1,0 +1,56 @@
+name: Testing
+
+on:
+  pull_request: {}
+  push:
+    branches: ["main"]
+
+jobs:
+  test-checkout:
+    runs-on: self-hosted-test
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: echo OK
+  test-container-checkout:
+    runs-on: self-hosted-test
+    container:
+      image: debian
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: echo OK
+  test-write:
+    runs-on: self-hosted-test
+    steps:
+      - name: Cache file
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
+        with:
+          path: test/test.bin
+          key: test-cache-${{ runner.os }}-${{ github.sha }}-${{ github.run_id }}
+          restore-keys: |
+            test-cache-${{ runner.os }}-${{ github.sha }}
+            test-cache-${{ runner.os }}
+            test-cache
+      - name: add cache file testing
+        id: test_cache_sum
+        run: |
+          mkdir -p test && dd if=/dev/random of=test/test.bin bs=1M count=10
+          sha256sum test/test.bin
+          echo "sha256sum=$(sha256sum test/test.bin | awk '{print $1}')" | tee -a $GITHUB_OUTPUT
+    outputs:
+      test_cache_sum: ${{ steps.test_cache_sum.outputs.sha256sum }}
+  test-read:
+    needs: [test-write]
+    runs-on: self-hosted-test
+    steps:
+      - name: Cache file
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
+        with:
+          path: test/test.bin
+          key: test-cache-${{ runner.os }}-${{ github.sha }}-${{ github.run_id }}
+          restore-keys: |
+            test-cache-${{ runner.os }}-${{ github.sha }}
+            test-cache-${{ runner.os }}
+            test-cache
+      - run: |
+          sha256sum test/test.bin
+          [ "$(sha256sum test/test.bin | awk '{print $1}')" = "${{ needs.write.outputs.test_cache_sum }}" ]
