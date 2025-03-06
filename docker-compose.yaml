@@ -1,6 +1,6 @@
 services:
   cache-server:
-    image: ghcr.io/falcondev-oss/github-actions-cache-server:latest
+    image: ghcr.io/falcondev-oss/github-actions-cache-server:6.0.1
     platform: linux/amd64
     ports:
       - '3000:3000'
@@ -32,8 +32,6 @@ services:
       RUNNER_GRACEFUL_STOP_TIMEOUT: 10
       RUNNER_NAME: runner-test-compose
       RUNNER_LABELS: self-hosted-test
-      http_proxy: http://cache-server:8000
-      https_proxy: http://cache-server:8000
       CACHE_CA_CERT_PATH: /run/secrets/ca_cert
     depends_on:
       cache-server:
