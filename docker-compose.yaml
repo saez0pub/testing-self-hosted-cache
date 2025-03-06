@@ -9,6 +9,7 @@ services:
       API_BASE_URL: http://localhost:3000
       CA_KEY_PATH: /run/secrets/ca_key
       CA_CERT_PATH: /run/secrets/ca_cert
+      NITRO_CLUSTER_WORKERS: ''
     volumes:
       - cache-data:/app/.data
     secrets:
