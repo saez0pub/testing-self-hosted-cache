@@ -1,0 +1,60 @@
+diff --git a/src/Runner.Worker/Handlers/ContainerActionHandler.cs b/src/Runner.Worker/Handlers/ContainerActionHandler.cs
+index 775ce2f0..0d306016 100644
+--- a/src/Runner.Worker/Handlers/ContainerActionHandler.cs
++++ b/src/Runner.Worker/Handlers/ContainerActionHandler.cs
+@@ -219,7 +219,12 @@ namespace GitHub.Runner.Worker.Handlers
+             var systemConnection = ExecutionContext.Global.Endpoints.Single(x => string.Equals(x.Name, WellKnownServiceEndpointNames.SystemVssConnection, StringComparison.OrdinalIgnoreCase));
+             Environment["ACTIONS_RUNTIME_URL"] = systemConnection.Url.AbsoluteUri;
+             Environment["ACTIONS_RUNTIME_TOKEN"] = systemConnection.Authorization.Parameters[EndpointAuthorizationParameters.AccessToken];
+-            if (systemConnection.Data.TryGetValue("CacheServerUrl", out var cacheUrl) && !string.IsNullOrEmpty(cacheUrl))
++            string customActionCacheUrl = System.Environment.GetEnvironmentVariable("CUSTOM_ACTIONS_CACHE_URL");
++            string customActionsResultsUrl = System.Environment.GetEnvironmentVariable("CUSTOM_ACTIONS_RESULTS_URL");
++            if (!string.IsNullOrEmpty(customActionCacheUrl))
++            {
++                Environment["ACTIONS_CACHE_URL"] = customActionCacheUrl;
++            } else if (systemConnection.Data.TryGetValue("CacheServerUrl", out var cacheUrl) && !string.IsNullOrEmpty(cacheUrl))
+             {
+                 Environment["ACTIONS_CACHE_URL"] = cacheUrl;
+             }
+@@ -232,7 +237,10 @@ namespace GitHub.Runner.Worker.Handlers
+                 Environment["ACTIONS_ID_TOKEN_REQUEST_URL"] = generateIdTokenUrl;
+                 Environment["ACTIONS_ID_TOKEN_REQUEST_TOKEN"] = systemConnection.Authorization.Parameters[EndpointAuthorizationParameters.AccessToken];
+             }
+-            if (systemConnection.Data.TryGetValue("ResultsServiceUrl", out var resultsUrl) && !string.IsNullOrEmpty(resultsUrl))
++            if (!string.IsNullOrEmpty(customActionsResultsUrl))
++            {
++                Environment["ACTIONS_RESULTS_URL"] = customActionsResultsUrl;
++            } else if (systemConnection.Data.TryGetValue("ResultsServiceUrl", out var resultsUrl) && !string.IsNullOrEmpty(resultsUrl))
+             {
+                 Environment["ACTIONS_RESULTS_URL"] = resultsUrl;
+             }
+diff --git a/src/Runner.Worker/Handlers/NodeScriptActionHandler.cs b/src/Runner.Worker/Handlers/NodeScriptActionHandler.cs
+index a399f13d..7106d144 100644
+--- a/src/Runner.Worker/Handlers/NodeScriptActionHandler.cs
++++ b/src/Runner.Worker/Handlers/NodeScriptActionHandler.cs
+@@ -54,7 +54,12 @@ namespace GitHub.Runner.Worker.Handlers
+             var systemConnection = ExecutionContext.Global.Endpoints.Single(x => string.Equals(x.Name, WellKnownServiceEndpointNames.SystemVssConnection, StringComparison.OrdinalIgnoreCase));
+             Environment["ACTIONS_RUNTIME_URL"] = systemConnection.Url.AbsoluteUri;
+             Environment["ACTIONS_RUNTIME_TOKEN"] = systemConnection.Authorization.Parameters[EndpointAuthorizationParameters.AccessToken];
+-            if (systemConnection.Data.TryGetValue("CacheServerUrl", out var cacheUrl) && !string.IsNullOrEmpty(cacheUrl))
++            string customActionCacheUrl = System.Environment.GetEnvironmentVariable("CUSTOM_ACTIONS_CACHE_URL");
++            string customActionsResultsUrl = System.Environment.GetEnvironmentVariable("CUSTOM_ACTIONS_RESULTS_URL");
++            if (!string.IsNullOrEmpty(customActionCacheUrl))
++            {
++                Environment["ACTIONS_CACHE_URL"] = customActionCacheUrl;
++            } else if (systemConnection.Data.TryGetValue("CacheServerUrl", out var cacheUrl) && !string.IsNullOrEmpty(cacheUrl))
+             {
+                 Environment["ACTIONS_CACHE_URL"] = cacheUrl;
+             }
+@@ -67,7 +72,10 @@ namespace GitHub.Runner.Worker.Handlers
+                 Environment["ACTIONS_ID_TOKEN_REQUEST_URL"] = generateIdTokenUrl;
+                 Environment["ACTIONS_ID_TOKEN_REQUEST_TOKEN"] = systemConnection.Authorization.Parameters[EndpointAuthorizationParameters.AccessToken];
+             }
+-            if (systemConnection.Data.TryGetValue("ResultsServiceUrl", out var resultsUrl) && !string.IsNullOrEmpty(resultsUrl))
++            if (!string.IsNullOrEmpty(customActionsResultsUrl))
++            {
++                Environment["ACTIONS_RESULTS_URL"] = customActionsResultsUrl;
++            } else if (systemConnection.Data.TryGetValue("ResultsServiceUrl", out var resultsUrl) && !string.IsNullOrEmpty(resultsUrl))
+             {
+                 Environment["ACTIONS_RESULTS_URL"] = resultsUrl;
+             }

@@ -75,24 +75,7 @@ start_docker() {
   echo 'Docker started'
 }
 
-setup_cache_ca() {
-  cp "${CACHE_CA_CERT_PATH}" "${NODE_EXTRA_CA_CERTS}"
-  sudo update-ca-certificates
-}
-
 check_env() {
-  if [ -z "${NODE_EXTRA_CA_CERTS}" ]; then
-    echo "missing NODE_EXTRA_CA_CERTS env variable"
-    exit 1
-  fi
-  if [ -z "${CACHE_CA_CERT_PATH}" ]; then
-    echo "missing CACHE_CA_CERT_PATH env variable"
-    exit 1
-  fi
-  if [ ! -e "${CACHE_CA_CERT_PATH}" ]; then
-    echo "missing ${CACHE_CA_CERT_PATH}"
-    exit 1
-  fi
 
   if [ -z "${RUNNER_NAME}" ]; then
     echo 'RUNNER_NAME must be set'
@@ -216,7 +199,6 @@ function wait_for_process() {
 
 main() {
   check_env
-  setup_cache_ca
   start_docker
   configure_runner
   execute_runner

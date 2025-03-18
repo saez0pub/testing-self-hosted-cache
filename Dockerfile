@@ -1,10 +1,8 @@
-FROM ubuntu:24.04
-
+FROM ubuntu:24.04 AS base
 ARG RUNNER_VERSION="2.322.0"
+
 SHELL ["/bin/bash", "-c"]
 USER root
-
-ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update -y \
     && apt install -y --no-install-recommends sudo lsb-release software-properties-common gpg-agent curl jq unzip \
@@ -13,11 +11,42 @@ RUN apt update -y \
     && apt install -y --no-install-recommends git \
     && apt upgrade -y  \
     && apt install -y --no-install-recommends \
-    build-essential libssl-dev libffi-dev python3 python3-venv python3-dev python3-pip vim dumb-init ca-certificates \
-    && mkdir /runner && cd /runner && \
-    curl -o actions-runner-linux.tar.gz -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz && \
-    tar xzf ./actions-runner-linux.tar.gz && \
-    rm ./actions-runner-linux.tar.gz && \
+    build-essential libssl-dev libffi-dev python3 python3-venv python3-dev python3-pip vim dumb-init ca-certificates
+ENV RUNNER_VERSION ${RUNNER_VERSION}
+
+
+FROM base AS builder
+
+
+SHELL ["/bin/bash", "-c"]
+USER root
+WORKDIR /work
+
+COPY files/runner.patch .
+RUN git clone --depth 1 --branch "v${RUNNER_VERSION}" https://github.com/actions/runner.git
+RUN cd runner && \
+    git apply /work/runner.patch && \
+    cd src && \
+    ./dev.sh layout Release linux-x64 && \
+    ./dev.sh package Release linux-x64
+
+
+FROM base AS runner
+
+SHELL ["/bin/bash", "-c"]
+USER root
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt update -y \
+    && apt upgrade -y \
+    && mkdir /runner
+
+COPY --from=builder /work/runner/_package/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz /runner/
+
+RUN cd /runner && \
+    tar xzf ./actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz && \
+    rm ./actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz && \
     ./bin/installdependencies.sh
 
 # dependencies
@@ -47,7 +76,6 @@ RUN mkdir /home/runner/.ssh/ && \
 RUN mkdir /opt/runner && chmod 777 /runner /opt/runner
 RUN echo "runner   ALL=(ALL) NOPASSWD: /usr/bin/dockerd,/usr/bin/pkill" >> /etc/sudoers && \
     echo "runner   ALL=(ALL) NOPASSWD: /usr/bin/rm /var/run/docker.pid" >> /etc/sudoers && \
-    echo "runner   ALL=(ALL) NOPASSWD: /usr/sbin/update-ca-certificates" >> /etc/sudoers && \
     echo "Defaults env_keep += \"DEBIAN_FRONTEND\"" >> /etc/sudoers
 
 ENV RUNNER_TOOL_CACHE=/opt/hostedtoolcache
